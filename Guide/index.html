@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Woofswap - User Guide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(180deg, #1e1e2f 0%, #2a2a3d 100%);
+            color: #ffffff;
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 800px;
+            background: #2c2f48;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1, h2 {
+            color: #ff9100;
+            text-align: center;
+        }
+        h2 {
+            margin-top: 20px;
+            font-size: 1.5em;
+        }
+        p, li {
+            line-height: 1.6;
+            font-size: 1em;
+        }
+        ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Woofswap - User Guide</h1>
+
+        <div class="section">
+            <h2>1. Preparation</h2>
+            <ul>
+                <li>Ensure MetaMask is installed and connected to the Shibarium network (Chain ID: 109).</li>
+                <li>Prepare BONE tokens on Shibarium for gas fees.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>2. Connect Wallet</h2>
+            <ul>
+                <li>Click the “Connect Wallet” button at the top of the page.</li>
+                <li>Authorize the connection in MetaMask; the page will display your wallet address (e.g., “Connected: 0x123...456”).</li>
+                <li>Confirm the network status shows “Connected to Shibarium”.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>3. Create an NFT Contract</h2>
+            <ul>
+                <li>In the “Create New NFT Contract” section, enter the following:
+                    <ul>
+                        <li><strong>Suffix</strong>: NFT suffix (e.g., “damn”), alphanumeric only.</li>
+                        <li><strong>Payment Token Address</strong>: Payment token address (use “0x0000000000000000000000000000000000000000” for no token payment).</li>
+                        <li><strong>Payment Amount</strong>: Payment amount in tokens (e.g., “0” for free).</li>
+                    </ul>
+                </li>
+                <li>Click “Create NFT Contract” and confirm the transaction in MetaMask.</li>
+                <li>Upon success, the “Your Created NFT Contracts (Latest 10)” section will display the new contract address (e.g., “Suffix: damn (0x123...456)”).</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>4. Mint an NFT</h2>
+            <ul>
+                <li>In the “Mint NFT” section, enter the following:
+                    <ul>
+                        <li><strong>NFT Contract Address</strong>: Copy a contract address from “Your Created NFT Contracts” and paste it here.</li>
+                        <li>After entering the address, contract info (e.g., “Suffix: damn”) will be displayed; confirm the suffix is correct.</li>
+                        <li><strong>NFT ID</strong>: Unique ID for the NFT (e.g., “xxx”), alphanumeric only.</li>
+                    </ul>
+                </li>
+                <li>Click “Mint NFT”; the frontend will check if the NFT ID already exists:
+                    <ul>
+                        <li>If it exists, you’ll see “This NFT ID is already minted”.</li>
+                        <li>If not, the minting process will proceed.</li>
+                    </ul>
+                </li>
+                <li>If token payment is required, the button will show “Approving...” and “Minting...”; confirm the transaction in MetaMask.</li>
+                <li>Upon success, the status will show “NFT minted successfully!”.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>5. View NFT Preview</h2>
+            <ul>
+                <li>After minting, the “NFT Preview” section will display the NFT’s SVG image (dark gray background with light gray text).</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>6. Notes</h2>
+            <ul>
+                <li>Ensure the network is Shibarium (Chain ID: 109), or interaction will fail.</li>
+                <li>If contract info doesn’t display, verify the address was created by “0x91795A1c17D96591aA8F96CB66973E27a272459d”.</li>
+                <li>Confirm the “Suffix” before minting to avoid mistakes.</li>
+                <li>If errors occur, open the browser console (F12) to view logs and contact support.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
