@@ -340,6 +340,13 @@
                 "outputs": [{"internalType": "address", "name": "", "type": "address"}],
                 "stateMutability": "view",
                 "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "mintBlock",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
             }
         ];
         const erc20Abi = [
@@ -434,7 +441,9 @@
             nftContract = null;
             paymentTokenContract = null;
             document.getElementById('nftInfo').style.display = 'none';
-            document.getElementById('nftPreview').style.display = ' 更新NFT信息
+            document.getElementById('nftPreview').style.display = 'none';
+        }
+
         async function updateNFTInfo(contractAddress) {
             if (!web3 || !web3.utils.isAddress(contractAddress)) {
                 document.getElementById('nftInfo').style.display = 'none';
@@ -467,30 +476,38 @@
         async function updateCreatedContracts() {
             if (!web3 || !account) return;
             try {
-                const suffixes = ['damn', 'woof', 'bark']; // 示例后缀，实际需从事件或映射获取
                 const list = document.getElementById('createdContractsList');
                 list.innerHTML = '';
-                const promises = suffixes.map(async suffix => {
-                    const contractAddress = await factoryContract.methods.suffixToNFT(suffix).call();
-                    if (contractAddress !== '0x0000000000000000000000000000000000000000') {
-                        const li = document.createElement('li');
-                        li.innerText = `Suffix: ${suffix} (${contractAddress.slice(0, 6)}...${contractAddress.slice(-4)})`;
-                        const copyButton = document.createElement('button');
-                        copyButton.className = 'copy-button';
-                        copyButton.innerText = 'Copy';
-                        copyButton.onclick = () => {
-                            navigator.clipboard.writeText(contractAddress);
-                            copyButton.innerText = 'Copied!';
-                            setTimeout(() => copyButton.innerText = 'Copy', 2000);
-                        };
-                        li.appendChild(copyButton);
-                        list.appendChild(li);
-                    }
+                const events = await factoryContract.getPastEvents('NFTContractCreated', {
+                    filter: { owner: account },
+                    fromBlock: 0,
+                    toBlock: 'latest'
                 });
-                await Promise.all(promises);
-                if (list.children.length === 0) {
+                const contracts = events
+                    .map(event => ({
+                        suffix: event.returnValues.suffix,
+                        contractAddress: event.returnValues.nftContract
+                    }))
+                    .slice(-10)
+                    .reverse();
+                if (contracts.length === 0) {
                     list.innerHTML = '<li>No contracts created yet.</li>';
+                    return;
                 }
+                contracts.forEach(contract => {
+                    const li = document.createElement('li');
+                    li.innerText = `Suffix: ${contract.suffix} (${contract.contractAddress.slice(0, 6)}...${contract.contractAddress.slice(-4)})`;
+                    const copyButton = document.createElement('button');
+                    copyButton.className = 'copy-button';
+                    copyButton.innerText = 'Copy';
+                    copyButton.onclick = () => {
+                        navigator.clipboard.writeText(contract.contractAddress);
+                        copyButton.innerText = 'Copied!';
+                        setTimeout(() => copyButton.innerText = 'Copy', 2000);
+                    };
+                    li.appendChild(copyButton);
+                    list.appendChild(li);
+                });
             } catch (error) {
                 document.getElementById('createdContractsList').innerHTML = '<li>Error loading contracts.</li>';
                 console.error("Created contracts error:", error);
@@ -501,19 +518,25 @@
             if (!web3 || !account || !web3.utils.isAddress(contractAddress)) return;
             try {
                 nftContract = new web3.eth.Contract(nftAbi, contractAddress);
-                const balance = await nftContract.methods.balanceOf(account).call();
+                const mintBlock = await nftContract.methods.mintBlock().call();
                 const list = document.getElementById('ownedNFTsList');
                 list.innerHTML = '';
-                if (balance == 0) {
+                const nfts = [];
+                for (let tokenId = 1; tokenId < mintBlock; tokenId++) {
+                    try {
+                        const owner = await nftContract.methods.ownerOf(tokenId).call();
+                        if (owner.toLowerCase() === account.toLowerCase()) {
+                            const tokenName = await nftContract.methods.tokenName(tokenId).call();
+                            const tokenURI = await nftContract.methods.tokenURI(tokenId).call();
+                            nfts.push({ tokenId, tokenName, tokenURI });
+                        }
+                    } catch (error) {
+                        continue; // Skip invalid tokenIds
+                    }
+                }
+                if (nfts.length === 0) {
                     list.innerHTML = '<li>No NFTs owned yet.</li>';
                     return;
-                }
-                const nfts = [];
-                for (let i = 1; i <= balance; i++) {
-                    const tokenId = i; // 假设 tokenId 从 1 开始
-                    const tokenName = await nftContract.methods.tokenName(tokenId).call();
-                    const tokenURI = await nftContract.methods.tokenURI(tokenId).call();
-                    nfts.push({ tokenId, tokenName, tokenURI });
                 }
                 nfts.slice(-10).reverse().forEach(nft => {
                     const li = document.createElement('li');
@@ -522,7 +545,9 @@
                     viewButton.className = 'copy-button';
                     viewButton.innerText = 'View';
                     viewButton.onclick = () => {
-                        document.getElementById('nftImage').src = nft.tokenURI;
+                        // Parse Base64 JSON to get image URI
+                        const json = JSON.parse(atob(nft.tokenURI.split(',')[1]));
+                        document.getElementById('nftImage').src = json.image;
                         document.getElementById('nftPreview').style.display = 'block';
                     };
                     li.appendChild(viewButton);
@@ -596,6 +621,13 @@
                 return;
             }
 
+            // Validate suffix: alphanumeric only
+            if (!/^[a-zA-Z0-9]+$/.test(suffix)) {
+                status.innerText = "Suffix must be alphanumeric.";
+                dogMessage.innerText = "Woof! Suffix can only contain letters and numbers, pup!";
+                return;
+            }
+
             try {
                 createButton.disabled = true;
                 status.innerText = "Creating NFT contract...";
@@ -652,6 +684,13 @@
             if (!nftId) {
                 status.innerText = "Please enter an NFT ID.";
                 dogMessage.innerText = getRandomMessage('noInput');
+                return;
+            }
+
+            // Validate NFT ID: alphanumeric only
+            if (!/^[a-zA-Z0-9]+$/.test(nftId)) {
+                status.innerText = "NFT ID must be alphanumeric.";
+                dogMessage.innerText = "Woof! ID can only contain letters and numbers, pup!";
                 return;
             }
 
