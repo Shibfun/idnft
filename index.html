@@ -384,6 +384,13 @@
                 "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
                 "stateMutability": "view",
                 "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "string", "name": "", "type": "string"}],
+                "name": "idsMintedLower",
+                "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+                "stateMutability": "view",
+                "type": "function"
             }
         ];
         const erc20Abi = [
@@ -413,6 +420,7 @@
             mintStart: ["Woof! Minting your NFT, hold tight, pup!", "Arf! Crafting your NFT now!", "Bark! Minting in progress!"],
             mintSuccess: ["Woof! NFT minted, you're a collector, pup!", "Arf! Your NFT is ready, check it out!", "Bark! Success! NFT created!"],
             mintFail: ["Woof! Minting failed, check details, pup!", "Arf! Something went wrong, try again!", "Bark! Minting hit a snag, retry!"],
+            mintExists: ["Woof! This NFT ID is already minted, pup!", "Arf! That ID is taken, try another!", "Bark! NFT ID already exists, pick a new one!"],
             noInput: ["Woof! Enter all required fields, pup!", "Arf! Can't proceed with empty fields!", "Bark! Need all details to continue!"],
             userDenied: ["Woof! You canceled the transaction, pup!", "Arf! Transaction denied, try again when ready!", "Bark! You said no, let's try again!"],
             invalidContract: ["Woof! Invalid NFT contract address, check it, pup!", "Arf! That contract doesn't exist, try another!", "Bark! Bad contract address, fix it!"]
@@ -485,6 +493,7 @@
             if (!web3 || !web3.utils.isAddress(contractAddress)) {
                 document.getElementById('nftInfo').style.display = 'none';
                 document.getElementById('nftPreview').style.display = 'none';
+                document.getElementById('dogMessage').innerText = getRandomMessage('invalidContract');
                 return;
             }
             try {
@@ -732,10 +741,21 @@
 
             try {
                 mintButton.disabled = true;
-                mintButton.innerText = "Initializing...";
+                mintButton.innerText = "Checking...";
                 dogMessage.innerText = getRandomMessage('mintStart');
 
                 nftContract = new web3.eth.Contract(nftAbi, contractAddress);
+                const nftIdLower = nftId.toLowerCase();
+                const isMinted = await nftContract.methods.idsMintedLower(nftIdLower).call();
+
+                if (isMinted) {
+                    status.innerText = "NFT ID already minted.";
+                    dogMessage.innerText = getRandomMessage('mintExists');
+                    mintButton.innerText = "Mint NFT";
+                    mintButton.disabled = false;
+                    return;
+                }
+
                 const paymentTokenAddress = await nftContract.methods.paymentToken().call();
                 const paymentAmount = await nftContract.methods.paymentAmount().call();
 
@@ -779,11 +799,19 @@
             }
         }
 
+        let debounceTimeout;
+        function debounce(func, delay) {
+            return function (...args) {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
         document.getElementById('connectWalletButton').addEventListener('click', initializeWeb3);
-        document.getElementById('nftContractAddress').addEventListener('input', async () => {
+        document.getElementById('nftContractAddress').addEventListener('input', debounce(async () => {
             const contractAddress = document.getElementById('nftContractAddress').value.trim();
             await updateNFTInfo(contractAddress);
-        });
+        }, 500));
     </script>
 </body>
 </html>
