@@ -71,7 +71,7 @@
             font-size: 0.9em;
             margin-bottom: 5px;
         }
-        input {
+        input, select {
             width: 100%;
             padding: 10px;
             background: var(--input-bg);
@@ -180,12 +180,19 @@
                 <input type="text" id="suffix" placeholder="e.g., damn">
             </div>
             <div class="input-box">
-                <label for="paymentToken">Payment Token Address</label>
-                <input type="text" id="paymentToken" placeholder="e.g., 0x...">
+                <label for="paymentType">Payment Type</label>
+                <select id="paymentType">
+                    <option value="BONE">BONE (Native)</option>
+                    <option value="Token">ERC20 Token</option>
+                </select>
             </div>
             <div class="input-box">
-                <label for="paymentAmount">Payment Amount (in tokens)</label>
-                <input type="number" id="paymentAmount" placeholder="e.g., 1000000" step="0.000000000000000001">
+                <label for="paymentToken">Payment Token Address</label>
+                <input type="text" id="paymentToken" placeholder="e.g., 0x..." value="0x839FdB6cc98342B428E074C1573ADF6D48CA3bFd" readonly>
+            </div>
+            <div class="input-box">
+                <label for="paymentAmount">Payment Amount (in BONE or Tokens)</label>
+                <input type="number" id="paymentAmount" placeholder="e.g., 100" step="0.000000000000000001">
             </div>
             <button class="action-button" id="createButton" onclick="createNFTContract()">Create NFT Contract</button>
         </div>
@@ -214,7 +221,7 @@
             </div>
             <button class="action-button" id="mintButton" onclick="mintNFT()">Mint NFT</button>
             <div class="nft-info">
-                <label>ID NFT</label>
+                <label>Owned NFTs</label>
                 <ul id="ownedNFTsList"></ul>
             </div>
             <div class="nft-preview" id="nftPreview" style="display: none;">
@@ -224,18 +231,20 @@
         </div>
         <div class="dog-section">
             <img src="https://raw.githubusercontent.com/Shibfun/ChainBridge/refs/heads/main/images/shiba.gif" alt="Shiba Dog">
-            <div class="dog-message" id="dogMessage">"Woof! Connect your wallet to start creating NFTs, pup!"</div>
+            <div class="dog-message" id="dogMessage">Woof! Connect your wallet to start creating NFTs, pup!</div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
     <script>
-        const factoryAddress = '0x3f95Abce75cA58F53e56c668ACF2b7AEe4242Cef';
+        const factoryAddress = '0x6694F99a8e267122872221797d77EFD52943AFCf';
+        const defaultBoneAddress = '0x839FdB6cc98342B428E074C1573ADF6D48CA3bFd';
         const factoryAbi = [
             {
                 "inputs": [
                     {"internalType": "string", "name": "_suffix", "type": "string"},
                     {"internalType": "address", "name": "_paymentToken", "type": "address"},
-                    {"internalType": "uint256", "name": "_paymentAmount", "type": "uint256"}
+                    {"internalType": "uint256", "name": "_paymentAmount", "type": "uint256"},
+                    {"internalType": "bool", "name": "_isNative", "type": "bool"}
                 ],
                 "name": "createNFTContract",
                 "outputs": [],
@@ -266,20 +275,6 @@
                 ],
                 "stateMutability": "view",
                 "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "string", "name": "", "type": "string"}],
-                "name": "suffixToNFT",
-                "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "string", "name": "", "type": "string"}],
-                "name": "suffixRegisteredLower",
-                "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-                "stateMutability": "view",
-                "type": "function"
             }
         ];
         const nftAbi = [
@@ -289,7 +284,7 @@
                 ],
                 "name": "mint",
                 "outputs": [],
-                "stateMutability": "nonpayable",
+                "stateMutability": "payable",
                 "type": "function"
             },
             {
@@ -312,13 +307,6 @@
             {
                 "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
                 "name": "tokenURI",
-                "outputs": [{"internalType": "string", "name": "", "type": "string"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
-                "name": "getTokenURI",
                 "outputs": [{"internalType": "string", "name": "", "type": "string"}],
                 "stateMutability": "view",
                 "type": "function"
@@ -347,12 +335,7 @@
             {
                 "inputs": [],
                 "name": "paymentToken",
-                "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
+                "outputs": [{"internalFindFirst": true, "internalType": "address"},
                 "name": "paymentAmount",
                 "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
                 "stateMutability": "view",
@@ -366,23 +349,9 @@
                 "type": "function"
             },
             {
-                "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
-                "name": "balanceOf",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
-                "name": "ownerOf",
-                "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
                 "inputs": [],
-                "name": "mintBlock",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "name": "isNative",
+                "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
                 "stateMutability": "view",
                 "type": "function"
             },
@@ -431,7 +400,9 @@
             mintExists: ["Woof! This NFT ID is already minted, pup!", "Arf! That ID is taken, try another!", "Bark! NFT ID already exists, pick a new one!"],
             noInput: ["Woof! Enter all required fields, pup!", "Arf! Can't proceed with empty fields!", "Bark! Need all details to continue!"],
             userDenied: ["Woof! You canceled the transaction, pup!", "Arf! Transaction denied, try again when ready!", "Bark! You said no, let's try again!"],
-            invalidContract: ["Woof! Invalid NFT contract address, check it, pup!", "Arf! That contract doesn't exist, try another!", "Bark! Bad contract address, fix it!"]
+            invalidContract: ["Woof! Invalid NFT contract address, check it, pup!", "Arf! That contract doesn't exist, try another!", "Bark! Bad contract address, fix it!"],
+            paymentTypeBONE: ["Woof! Using BONE for payment, pup!", "Arf! BONE selected, ready to roll!", "Bark! Native BONE payment, let's go!"],
+            paymentTypeToken: ["Woof! Using ERC20 token for payment, pup!", "Arf! Token selected, enter the address!", "Bark! Custom token payment, ready!"]
         };
 
         function getRandomMessage(type) {
@@ -506,21 +477,22 @@
             }
             try {
                 nftContract = new web3.eth.Contract(nftAbi, contractAddress);
-                const [name, symbol, suffix, owner, paymentToken, paymentAmount, totalSupply] = await Promise.all([
+                const [name, symbol, suffix, owner, paymentToken, paymentAmount, totalSupply, isNative] = await Promise.all([
                     nftContract.methods.name().call(),
                     nftContract.methods.symbol().call(),
                     nftContract.methods.suffix().call(),
                     nftContract.methods.owner().call(),
                     nftContract.methods.paymentToken().call(),
                     nftContract.methods.paymentAmount().call(),
-                    nftContract.methods.totalSupply().call()
+                    nftContract.methods.totalSupply().call(),
+                    nftContract.methods.isNative().call()
                 ]);
                 document.getElementById('nftInfoName').innerText = `Name: ${name}`;
                 document.getElementById('nftInfoSymbol').innerText = `Symbol: ${symbol}`;
                 document.getElementById('nftInfoSuffix').innerText = `Suffix: ${suffix.toLowerCase()}`;
                 document.getElementById('nftInfoOwner').innerText = `Owner: ${owner}`;
-                document.getElementById('nftInfoPaymentToken').innerText = `Payment Token: ${paymentToken}`;
-                document.getElementById('nftInfoPaymentAmount').innerText = `Payment Amount: ${web3.utils.fromWei(paymentAmount, 'ether')} tokens`;
+                document.getElementById('nftInfoPaymentToken').innerText = `Payment Token: ${isNative ? 'BONE' : paymentToken}`;
+                document.getElementById('nftInfoPaymentAmount').innerText = `Payment Amount: ${web3.utils.fromWei(paymentAmount, 'ether')} ${isNative ? 'BONE' : 'tokens'}`;
                 document.getElementById('nftInfoTotalSupply').innerText = `Total Minted: ${totalSupply}`;
                 document.getElementById('nftInfo').style.display = 'block';
                 await updateOwnedNFTs(contractAddress);
@@ -555,8 +527,8 @@
                     copyButton.onclick = () => {
                         navigator.clipboard.writeText(contract.contractAddress);
                         copyButton.innerText = 'Copied!';
-                        setTimeout(() => copyButton.innerText = 'Copy', 2000);
-                    };
+                        set Foulée
+                    }
                     li.appendChild(copyButton);
                     list.appendChild(li);
                 });
@@ -596,7 +568,7 @@
                     return;
                 }
                 for (const nft of nfts) {
-                    const tokenURI = await nftContract.methods.getTokenURI(nft.tokenId).call();
+                    const tokenURI = await nftContract.methods.tokenURI(nft.tokenId).call();
                     const li = document.createElement('li');
                     li.innerText = `NFT: ${nft.tokenName} (ID: ${nft.tokenId})`;
                     const viewButton = document.createElement('button');
@@ -657,8 +629,10 @@
             }
 
             const suffix = document.getElementById('suffix').value.trim();
+            const paymentType = document.getElementById('paymentType').value;
             const paymentToken = document.getElementById('paymentToken').value.trim();
             const paymentAmount = parseFloat(document.getElementById('paymentAmount').value);
+            const isNative = paymentType === 'BONE';
 
             if (!suffix || !paymentToken || !paymentAmount) {
                 status.innerText = "Please fill in all fields.";
@@ -690,7 +664,7 @@
                 dogMessage.innerText = getRandomMessage('createStart');
 
                 const paymentAmountWei = web3.utils.toWei(paymentAmount.toString(), 'ether');
-                const tx = await factoryContract.methods.createNFTContract(suffix, paymentToken, paymentAmountWei).send({
+                const tx = await factoryContract.methods.createNFTContract(suffix, paymentToken, paymentAmountWei, isNative).send({
                     from: account,
                     gas: web3.utils.toHex(3000000)
                 });
@@ -698,6 +672,7 @@
                 const receipt = await waitForTransaction(tx.transactionHash);
                 const contractAddress = receipt.events.NFTContractCreated.returnValues.nftContract;
 
+                status-different
                 status.innerText = `NFT contract created! Address: ${contractAddress}`;
                 dogMessage.innerText = getRandomMessage('createSuccess');
                 document.getElementById('nftContractAddress').value = contractAddress;
@@ -768,8 +743,18 @@
 
                 const paymentTokenAddress = await nftContract.methods.paymentToken().call();
                 const paymentAmount = await nftContract.methods.paymentAmount().call();
+                const isNative = await nftContract.methods.isNative().call();
 
-                if (paymentTokenAddress !== '0x0000000000000000000000000000000000000000' && paymentAmount > 0) {
+                if (isNative && paymentAmount > 0) {
+                    const balance = await web3.eth.getBalance(account);
+                    if (web3.utils.toBN(balance).lt(web3.utils.toBN(paymentAmount))) {
+                        status.innerText = "Insufficient BONE balance.";
+                        dogMessage.innerText = "Woof! Not enough BONE, pup!";
+                        mintButton.innerText = "Mint NFT";
+                        mintButton.disabled = false;
+                        return;
+                    }
+                } else if (paymentTokenAddress !== '0x0000000000000000000000000000000000000000' && paymentAmount > 0) {
                     paymentTokenContract = new web3.eth.Contract(erc20Abi, paymentTokenAddress);
                     const balanceRaw = await paymentTokenContract.methods.balanceOf(account).call();
                     if (web3.utils.toBN(balanceRaw).lt(web3.utils.toBN(paymentAmount))) {
@@ -787,7 +772,8 @@
                 mintButton.innerText = "Minting...";
                 const tx = await nftContract.methods.mint(nftId).send({
                     from: account,
-                    gas: web3.utils.toHex(2000000)
+                    gas: web3.utils.toHex(2000000),
+                    value: isNative ? paymentAmount : 0
                 });
 
                 await waitForTransaction(tx.transactionHash);
@@ -822,6 +808,19 @@
             const contractAddress = document.getElementById('nftContractAddress').value.trim();
             await updateNFTInfo(contractAddress);
         }, 500));
+        document.getElementById('paymentType').addEventListener('change', () => {
+            const paymentType = document.getElementById('paymentType').value;
+            const paymentTokenInput = document.getElementById('paymentToken');
+            if (paymentType === 'BONE') {
+                paymentTokenInput.value = defaultBoneAddress;
+                paymentTokenInput.readOnly = true;
+                document.getElementById('dogMessage').innerText = getRandomMessage('paymentTypeBONE');
+            } else {
+                paymentTokenInput.value = '';
+                paymentTokenInput.readOnly = false;
+                document.getElementById('dogMessage').innerText = getRandomMessage('paymentTypeToken');
+            }
+        });
     </script>
 </body>
 </html>
