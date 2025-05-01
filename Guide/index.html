@@ -68,7 +68,7 @@
             <ul>
                 <li>In the “Create New NFT Contract” section, enter the following:
                     <ul>
-                        <li><strong>Suffix</strong>: NFT suffix (e.g., “damn”), alphanumeric only.</li>
+                        <li><strong>Suffix</strong>: NFT suffix (e.g., “damn”), alphanumeric only, displayed in lowercase (e.g., “xxx.damn”).</li>
                         <li><strong>Payment Token Address</strong>: Payment token address (use “0x0000000000000000000000000000000000000000” for no token payment).</li>
                         <li><strong>Payment Amount</strong>: Payment amount in tokens (e.g., “0” for free).</li>
                     </ul>
@@ -84,8 +84,8 @@
                 <li>In the “Mint NFT” section, enter the following:
                     <ul>
                         <li><strong>NFT Contract Address</strong>: Copy a contract address from “Your Created NFT Contracts” and paste it here.</li>
-                        <li>After entering the address, contract info (e.g., “Suffix: damn”) will be displayed; confirm the suffix is correct.</li>
-                        <li><strong>NFT ID</strong>: Unique ID for the NFT (e.g., “xxx”), alphanumeric only.</li>
+                        <li>After entering the address, contract info (e.g., “Suffix: damn”, “Total Minted: X”) will be displayed; confirm the suffix and total minted NFTs are correct.</li>
+                        <li><strong>NFT ID</strong>: Unique ID for the NFT (e.g., “xxx”), alphanumeric only, will display as lowercase (e.g., “xxx.damn”).</li>
                     </ul>
                 </li>
                 <li>Click “Mint NFT”; the frontend will check if the NFT ID already exists:
@@ -95,14 +95,15 @@
                     </ul>
                 </li>
                 <li>If token payment is required, the button will show “Approving...” and “Minting...”; confirm the transaction in MetaMask.</li>
-                <li>Upon success, the status will show “NFT minted successfully!”.</li>
+                <li>Upon success, the status will show “NFT minted successfully!” and the “Total Minted” count will update.</li>
             </ul>
         </div>
 
         <div class="section">
             <h2>5. View NFT Preview</h2>
             <ul>
-                <li>After minting, the “NFT Preview” section will display the NFT’s SVG image (dark gray background with light gray text).</li>
+                <li>After minting, the “ID NFT” section will list your NFTs (e.g., “NFT: xxx.damn (ID: 1)”).</li>
+                <li>Click “View” next to an NFT to display its SVG image in the “NFT Preview” section (dark gray background with light gray text, showing lowercase name like “xxx.damn”).</li>
             </ul>
         </div>
 
@@ -110,8 +111,8 @@
             <h2>6. Notes</h2>
             <ul>
                 <li>Ensure the network is Shibarium (Chain ID: 109), or interaction will fail.</li>
-                <li>If contract info doesn’t display, verify the address was created by “0x91795A1c17D96591aA8F96CB66973E27a272459d”.</li>
-                <li>Confirm the “Suffix” before minting to avoid mistakes.</li>
+                <li>If contract info doesn’t display, verify the address was created by “0x3f95Abce75cA58F53e56c668ACF2b7AEe4242Cef”.</li>
+                <li>Confirm the “Suffix” and “Total Minted” before minting to avoid mistakes.</li>
                 <li>If errors occur, open the browser console (F12) to view logs and contact support.</li>
             </ul>
         </div>
