@@ -508,7 +508,7 @@
                 ]);
                 document.getElementById('nftInfoName').innerText = `Name: ${name}`;
                 document.getElementById('nftInfoSymbol').innerText = `Symbol: ${symbol}`;
-                document.getElementById('nftInfoSuffix').innerText = `Suffix: ${suffix}`;
+                document.getElementById('nftInfoSuffix').innerText = `Suffix: ${suffix.toLowerCase()}`;
                 document.getElementById('nftInfoOwner').innerText = `Owner: ${owner}`;
                 document.getElementById('nftInfoPaymentToken').innerText = `Payment Token: ${paymentToken}`;
                 document.getElementById('nftInfoPaymentAmount').innerText = `Payment Amount: ${web3.utils.fromWei(paymentAmount, 'ether')} tokens`;
@@ -538,7 +538,7 @@
                 }
                 contracts.forEach(contract => {
                     const li = document.createElement('li');
-                    li.innerText = `Suffix: ${contract.suffix} (${contract.contractAddress.slice(0, 6)}...${contract.contractAddress.slice(-4)})`;
+                    li.innerText = `Suffix: ${contract.suffix.toLowerCase()} (${contract.contractAddress.slice(0, 6)}...${contract.contractAddress.slice(-4)})`;
                     const copyButton = document.createElement('button');
                     copyButton.className = 'copy-button';
                     copyButton.innerText = 'Copy';
