@@ -202,6 +202,7 @@
             <div class="nft-info" id="nftInfo" style="display: none;">
                 <p id="nftInfoName"></p>
                 <p id="nftInfoSymbol"></p>
+                <p id="nftInfoSuffix"></p>
                 <p id="nftInfoOwner"></p>
                 <p id="nftInfoPaymentToken"></p>
                 <p id="nftInfoPaymentAmount"></p>
@@ -488,15 +489,17 @@
             }
             try {
                 nftContract = new web3.eth.Contract(nftAbi, contractAddress);
-                const [name, symbol, owner, paymentToken, paymentAmount] = await Promise.all([
+                const [name, symbol, suffix, owner, paymentToken, paymentAmount] = await Promise.all([
                     nftContract.methods.name().call(),
                     nftContract.methods.symbol().call(),
+                    nftContract.methods.suffix().call(),
                     nftContract.methods.owner().call(),
                     nftContract.methods.paymentToken().call(),
                     nftContract.methods.paymentAmount().call()
                 ]);
                 document.getElementById('nftInfoName').innerText = `Name: ${name}`;
                 document.getElementById('nftInfoSymbol').innerText = `Symbol: ${symbol}`;
+                document.getElementById('nftInfoSuffix').innerText = `Suffix: ${suffix}`;
                 document.getElementById('nftInfoOwner').innerText = `Owner: ${owner}`;
                 document.getElementById('nftInfoPaymentToken').innerText = `Payment Token: ${paymentToken}`;
                 document.getElementById('nftInfoPaymentAmount').innerText = `Payment Amount: ${web3.utils.fromWei(paymentAmount, 'ether')} tokens`;
@@ -541,6 +544,18 @@
             } catch (error) {
                 document.getElementById('createdContractsList').innerHTML = '<li>Error loading contracts.</li>';
                 console.error("Created contracts error:", error);
+            }
+        }
+
+        async function updateCreatedContractsWithRetry(maxRetries = 3, delay = 2000) {
+            for (let i = 0; i < maxRetries; i++) {
+                const list = document.getElementById('createdContractsList');
+                const currentLength = list.children.length;
+                await updateCreatedContracts();
+                if (list.children.length !== currentLength || list.children[0].innerText !== 'No contracts created yet.') {
+                    return;
+                }
+                await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
 
@@ -668,7 +683,7 @@
                 dogMessage.innerText = getRandomMessage('createSuccess');
                 document.getElementById('nftContractAddress').value = contractAddress;
                 await updateNFTInfo(contractAddress);
-                await updateCreatedContracts();
+                await updateCreatedContractsWithRetry();
             } catch (error) {
                 if (error.code === 4001) {
                     status.innerText = "Transaction canceled by user.";
@@ -717,7 +732,7 @@
 
             try {
                 mintButton.disabled = true;
-                status.innerText = "Initializing NFT contract...";
+                mintButton.innerText = "Initializing...";
                 dogMessage.innerText = getRandomMessage('mintStart');
 
                 nftContract = new web3.eth.Contract(nftAbi, contractAddress);
@@ -730,14 +745,16 @@
                     if (web3.utils.toBN(balanceRaw).lt(web3.utils.toBN(paymentAmount))) {
                         status.innerText = "Insufficient payment token balance.";
                         dogMessage.innerText = "Woof! Not enough tokens, pup!";
+                        mintButton.innerText = "Mint NFT";
+                        mintButton.disabled = false;
                         return;
                     }
 
-                    status.innerText = "Approving payment token...";
+                    mintButton.innerText = "Approving...";
                     await approveToken(paymentTokenAddress, contractAddress, paymentAmount);
                 }
 
-                status.innerText = "Minting NFT...";
+                mintButton.innerText = "Minting...";
                 const tx = await nftContract.methods.mint(nftId).send({
                     from: account,
                     gas: web3.utils.toHex(2000000)
@@ -757,6 +774,7 @@
                     console.error("Minting error:", error);
                 }
             } finally {
+                mintButton.innerText = "Mint NFT";
                 mintButton.disabled = false;
             }
         }
