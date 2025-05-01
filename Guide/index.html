@@ -49,8 +49,9 @@
         <div class="section">
             <h2>1. Preparation</h2>
             <ul>
-                <li>Ensure MetaMask is installed and connected to the Shibarium network (Chain ID: 109).</li>
-                <li>Prepare BONE tokens on Shibarium for gas fees.</li>
+                <li>Install MetaMask and connect it to the Shibarium network (Chain ID: 109, RPC URL: <code>https://rpc.shibariumchain.com</code>).</li>
+                <li>Ensure you have sufficient BONE tokens on Shibarium for gas fees and potential NFT minting payments.</li>
+                <li>If using ERC20 token payments, have enough tokens in your wallet for minting fees.</li>
             </ul>
         </div>
 
@@ -58,62 +59,72 @@
             <h2>2. Connect Wallet</h2>
             <ul>
                 <li>Click the “Connect Wallet” button at the top of the page.</li>
-                <li>Authorize the connection in MetaMask; the page will display your wallet address (e.g., “Connected: 0x123...456”).</li>
-                <li>Confirm the network status shows “Connected to Shibarium”.</li>
+                <li>Authorize the connection in MetaMask; the button will update to show your wallet address (e.g., “Connected: 0x123...456”).</li>
+                <li>Verify the network status displays “Connected to Shibarium”. If not, manually switch to Shibarium in MetaMask.</li>
             </ul>
         </div>
 
         <div class="section">
             <h2>3. Create an NFT Contract</h2>
             <ul>
-                <li>In the “Create New NFT Contract” section, enter the following:
+                <li>In the “Create New NFT Contract” section, fill in the following:
                     <ul>
-                        <li><strong>Suffix</strong>: NFT suffix (e.g., “damn”), alphanumeric only, displayed in lowercase (e.g., “xxx.damn”).</li>
-                        <li><strong>Payment Token Address</strong>: Payment token address (use “0x0000000000000000000000000000000000000000” for no token payment).</li>
-                        <li><strong>Payment Amount</strong>: Payment amount in tokens (e.g., “0” for free).</li>
+                        <li><strong>Suffix</strong>: Enter an NFT suffix (e.g., “damn”), alphanumeric only. It will be displayed in lowercase (e.g., “xxx.damn”).</li>
+                        <li><strong>Payment Type</strong>: Choose between “BONE (Native)” or “ERC20 Token”:
+                            <ul>
+                                <li>For BONE, the Payment Token Address is fixed to <code>0x839FdB6cc98342B428E074C1573ADF6D48CA3bFd</code> and cannot be changed.</li>
+                                <li>For ERC20 Token, manually enter a valid token address (e.g., a Shibarium ERC20 token address).</li>
+                            </ul>
+                        </li>
+                        <li><strong>Payment Amount</strong>: Specify the minting fee in BONE or tokens (e.g., “0” for free minting).</li>
                     </ul>
                 </li>
                 <li>Click “Create NFT Contract” and confirm the transaction in MetaMask.</li>
-                <li>Upon success, the “Your Created NFT Contracts (Latest 10)” section will display the new contract address (e.g., “Suffix: damn (0x123...456)”).</li>
+                <li>On success, the “Your Created NFT Contracts (Latest 10)” section will list the new contract (e.g., “Suffix: damn (0x123...456)”). Click “Copy” to copy the contract address.</li>
             </ul>
         </div>
 
         <div class="section">
             <h2>4. Mint an NFT</h2>
             <ul>
-                <li>In the “Mint NFT” section, enter the following:
+                <li>In the “Mint NFT” section, provide the following:
                     <ul>
-                        <li><strong>NFT Contract Address</strong>: Copy a contract address from “Your Created NFT Contracts” and paste it here.</li>
-                        <li>After entering the address, contract info (e.g., “Suffix: damn”, “Total Minted: X”) will be displayed; confirm the suffix and total minted NFTs are correct.</li>
-                        <li><strong>NFT ID</strong>: Unique ID for the NFT (e.g., “xxx”), alphanumeric only, will display as lowercase (e.g., “xxx.damn”).</li>
+                        <li><strong>NFT Contract Address</strong>: Paste a contract address from the “Your Created NFT Contracts” list.</li>
+                        <li>After entering the address, contract details will appear (e.g., “Suffix: damn”, “Total Minted: X”). Verify the suffix and total minted NFTs.</li>
+                        <li><strong>NFT ID</strong>: Enter a unique ID for the NFT (e.g., “xxx”), alphanumeric only. It will display as lowercase (e.g., “xxx.damn”).</li>
                     </ul>
                 </li>
-                <li>Click “Mint NFT”; the frontend will check if the NFT ID already exists:
+                <li>Click “Mint NFT”. The system will check if the NFT ID is already minted:
                     <ul>
-                        <li>If it exists, you’ll see “This NFT ID is already minted”.</li>
-                        <li>If not, the minting process will proceed.</li>
+                        <li>If already minted, you’ll see “This NFT ID is already minted”.</li>
+                        <li>If not, the minting process will continue.</li>
                     </ul>
                 </li>
-                <li>If token payment is required, the button will show “Approving...” and “Minting...”; confirm the transaction in MetaMask.</li>
-                <li>Upon success, the status will show “NFT minted successfully!” and the “Total Minted” count will update.</li>
+                <li>If payment is required:
+                    <ul>
+                        <li>For BONE payment, ensure your wallet has enough BONE; confirm the transaction in MetaMask.</li>
+                        <li>For ERC20 token payment, the button will show “Approving...” and then “Minting...”; confirm the token approval and minting transactions in MetaMask.</li>
+                    </ul>
+                </li>
+                <li>On success, the status will show “NFT minted successfully!” and the “Total Minted” count will update.</li>
             </ul>
         </div>
 
         <div class="section">
             <h2>5. View NFT Preview</h2>
             <ul>
-                <li>After minting, the “ID NFT” section will list your NFTs (e.g., “NFT: xxx.damn (ID: 1)”).</li>
-                <li>Click “View” next to an NFT to display its SVG image in the “NFT Preview” section (dark gray background with light gray text, showing lowercase name like “xxx.damn”).</li>
+                <li>After minting, the “Owned NFTs” section will list your NFTs (e.g., “NFT: xxx.damn (ID: 1)”).</li>
+                <li>Click “View” next to an NFT to see its SVG image in the “NFT Preview” section (dark gray background with light gray text, showing the lowercase name like “xxx.damn”).</li>
             </ul>
         </div>
 
         <div class="section">
             <h2>6. Notes</h2>
             <ul>
-                <li>Ensure the network is Shibarium (Chain ID: 109), or interaction will fail.</li>
-                <li>If contract info doesn’t display, verify the address was created by “0x3f95Abce75cA58F53e56c668ACF2b7AEe4242Cef”.</li>
-                <li>Confirm the “Suffix” and “Total Minted” before minting to avoid mistakes.</li>
-                <li>If errors occur, open the browser console (F12) to view logs and contact support.</li>
+                <li>Ensure you’re on the Shibarium network (Chain ID: 109). Other networks will cause interactions to fail.</li>
+                <li>If contract info doesn’t display, verify the address was created by the factory contract <code>0x6694F99a8e267122872221797d77EFD52943AFCf</code>.</li>
+                <li>Double-check the “Suffix” and “Total Minted” before minting to avoid errors.</li>
+                <li>For errors, open the browser console (F12) to view logs and contact support if needed.</li>
             </ul>
         </div>
     </div>
