@@ -335,7 +335,12 @@
             {
                 "inputs": [],
                 "name": "paymentToken",
-                "outputs": [{"internalFindFirst": true, "internalType": "address"},
+                "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
                 "name": "paymentAmount",
                 "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
                 "stateMutability": "view",
@@ -402,7 +407,8 @@
             userDenied: ["Woof! You canceled the transaction, pup!", "Arf! Transaction denied, try again when ready!", "Bark! You said no, let's try again!"],
             invalidContract: ["Woof! Invalid NFT contract address, check it, pup!", "Arf! That contract doesn't exist, try another!", "Bark! Bad contract address, fix it!"],
             paymentTypeBONE: ["Woof! Using BONE for payment, pup!", "Arf! BONE selected, ready to roll!", "Bark! Native BONE payment, let's go!"],
-            paymentTypeToken: ["Woof! Using ERC20 token for payment, pup!", "Arf! Token selected, enter the address!", "Bark! Custom token payment, ready!"]
+            paymentTypeToken: ["Woof! Using ERC20 token for payment, pup!", "Arf! Token selected, enter the address!", "Bark! Custom token payment, ready!"],
+            networkFail: ["Woof! Failed to switch to Shibarium, pup!", "Arf! Network switch failed, try again!", "Bark! Can't connect to Shibarium, check your settings!"]
         };
 
         function getRandomMessage(type) {
@@ -411,31 +417,39 @@
         }
 
         async function initializeWeb3() {
+            const status = document.getElementById('networkStatus');
+            const dogMessage = document.getElementById('dogMessage');
+
             if (!window.ethereum) {
-                document.getElementById('networkStatus').innerText = 'Please install MetaMask';
-                document.getElementById('dogMessage').innerText = 'Woof! MetaMask not found, pup!';
+                status.innerText = 'Please install MetaMask';
+                dogMessage.innerText = 'Woof! MetaMask not found, pup!';
                 return;
             }
+
             try {
                 web3 = new Web3(window.ethereum);
-                await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const accounts = await web3.eth.getAccounts();
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
                 account = accounts[0];
                 document.getElementById('connectWalletButton').innerText = `Connected: ${account.slice(0, 6)}...${account.slice(-4)}`;
+
                 await switchNetwork(fromChain);
                 await initializeContracts();
                 await updateCreatedContracts();
-                document.getElementById('networkStatus').innerText = `Connected to ${fromChain}`;
-                document.getElementById('dogMessage').innerText = getRandomMessage('connectSuccess');
+
+                status.innerText = `Connected to ${fromChain}`;
+                dogMessage.innerText = getRandomMessage('connectSuccess');
             } catch (error) {
-                document.getElementById('networkStatus').innerText = 'Failed to connect wallet';
-                document.getElementById('dogMessage').innerText = getRandomMessage('connectFail');
-                console.error("Wallet connection error:", error);
+                status.innerText = 'Failed to connect wallet';
+                dogMessage.innerText = getRandomMessage('connectFail');
+                console.error("Wallet connection error:", error.message);
             }
         }
 
         async function switchNetwork(chain) {
             const chainConfig = chains[chain];
+            const status = document.getElementById('networkStatus');
+            const dogMessage = document.getElementById('dogMessage');
+
             try {
                 await window.ethereum.request({
                     method: 'wallet_switchEthereumChain',
@@ -443,21 +457,30 @@
                 });
             } catch (switchError) {
                 if (switchError.code === 4902) {
-                    await window.ethereum.request({
-                        method: 'wallet_addEthereumChain',
-                        params: [{
-                            chainId: `0x${chainConfig.chainId.toString(16)}`,
-                            chainName: chainConfig.chainName,
-                            rpcUrls: [chainConfig.rpcUrl],
-                            nativeCurrency: { name: chainConfig.chainName, symbol: 'BONE', decimals: 18 },
-                            blockExplorerUrls: ['https://shibariumscan.io']
-                        }]
-                    });
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: `0x${chainConfig.chainId.toString(16)}`,
+                                chainName: chainConfig.chainName,
+                                rpcUrls: [chainConfig.rpcUrl],
+                                nativeCurrency: { name: chainConfig.chainName, symbol: 'BONE', decimals: 18 },
+                                blockExplorerUrls: ['https://shibariumscan.io']
+                            }]
+                        });
+                    } catch (addError) {
+                        status.innerText = 'Failed to add Shibarium network';
+                        dogMessage.innerText = getRandomMessage('networkFail');
+                        console.error("Network add error:", addError.message);
+                        throw addError;
+                    }
                 } else {
+                    status.innerText = 'Failed to switch to Shibarium';
+                    dogMessage.innerText = getRandomMessage('networkFail');
+                    console.error("Network switch error:", switchError.message);
                     throw switchError;
                 }
             }
-            await initializeContracts();
         }
 
         async function initializeContracts() {
@@ -499,7 +522,7 @@
             } catch (error) {
                 document.getElementById('nftInfo').style.display = 'none';
                 document.getElementById('dogMessage').innerText = getRandomMessage('invalidContract');
-                console.error("NFT info error:", error);
+                console.error("NFT info error:", error.message);
             }
         }
 
@@ -527,14 +550,14 @@
                     copyButton.onclick = () => {
                         navigator.clipboard.writeText(contract.contractAddress);
                         copyButton.innerText = 'Copied!';
-                        set Foulée
-                    }
+                        setTimeout(() => copyButton.innerText = 'Copy', 2000);
+                    };
                     li.appendChild(copyButton);
                     list.appendChild(li);
                 });
             } catch (error) {
                 document.getElementById('createdContractsList').innerHTML = '<li>Error loading contracts.</li>';
-                console.error("Created contracts error:", error);
+                console.error("Created contracts error:", error.message);
             }
         }
 
@@ -584,7 +607,7 @@
                 }
             } catch (error) {
                 document.getElementById('ownedNFTsList').innerHTML = '<li>Error loading NFTs.</li>';
-                console.error("Owned NFTs error:", error);
+                console.error("Owned NFTs error:", error.message);
             }
         }
 
@@ -672,7 +695,6 @@
                 const receipt = await waitForTransaction(tx.transactionHash);
                 const contractAddress = receipt.events.NFTContractCreated.returnValues.nftContract;
 
-                status-different
                 status.innerText = `NFT contract created! Address: ${contractAddress}`;
                 dogMessage.innerText = getRandomMessage('createSuccess');
                 document.getElementById('nftContractAddress').value = contractAddress;
@@ -685,7 +707,7 @@
                 } else {
                     status.innerText = "Contract creation failed.";
                     dogMessage.innerText = getRandomMessage('createFail');
-                    console.error("Creation error:", error);
+                    console.error("Creation error:", error.message);
                 }
             } finally {
                 createButton.disabled = false;
@@ -787,7 +809,7 @@
                 } else {
                     status.innerText = "Minting failed.";
                     dogMessage.innerText = getRandomMessage('mintFail');
-                    console.error("Minting error:", error);
+                    console.error("Minting error:", error.message);
                 }
             } finally {
                 mintButton.innerText = "Mint NFT";
@@ -814,10 +836,12 @@
             if (paymentType === 'BONE') {
                 paymentTokenInput.value = defaultBoneAddress;
                 paymentTokenInput.readOnly = true;
+                paymentTokenInput.disabled = true;
                 document.getElementById('dogMessage').innerText = getRandomMessage('paymentTypeBONE');
             } else {
                 paymentTokenInput.value = '';
                 paymentTokenInput.readOnly = false;
+                paymentTokenInput.disabled = false;
                 document.getElementById('dogMessage').innerText = getRandomMessage('paymentTypeToken');
             }
         });
