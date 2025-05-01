@@ -206,6 +206,7 @@
                 <p id="nftInfoOwner"></p>
                 <p id="nftInfoPaymentToken"></p>
                 <p id="nftInfoPaymentAmount"></p>
+                <p id="nftInfoTotalSupply"></p>
             </div>
             <div class="input-box">
                 <label for="nftId">NFT ID (e.g., xxx)</label>
@@ -228,7 +229,7 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
     <script>
-        const factoryAddress = '0x91795A1c17D96591aA8F96CB66973E27a272459d';
+        const factoryAddress = '0x3f95Abce75cA58F53e56c668ACF2b7AEe4242Cef';
         const factoryAbi = [
             {
                 "inputs": [
@@ -386,6 +387,13 @@
                 "type": "function"
             },
             {
+                "inputs": [],
+                "name": "totalSupply",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
                 "inputs": [{"internalType": "string", "name": "", "type": "string"}],
                 "name": "idsMintedLower",
                 "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
@@ -498,13 +506,14 @@
             }
             try {
                 nftContract = new web3.eth.Contract(nftAbi, contractAddress);
-                const [name, symbol, suffix, owner, paymentToken, paymentAmount] = await Promise.all([
+                const [name, symbol, suffix, owner, paymentToken, paymentAmount, totalSupply] = await Promise.all([
                     nftContract.methods.name().call(),
                     nftContract.methods.symbol().call(),
                     nftContract.methods.suffix().call(),
                     nftContract.methods.owner().call(),
                     nftContract.methods.paymentToken().call(),
-                    nftContract.methods.paymentAmount().call()
+                    nftContract.methods.paymentAmount().call(),
+                    nftContract.methods.totalSupply().call()
                 ]);
                 document.getElementById('nftInfoName').innerText = `Name: ${name}`;
                 document.getElementById('nftInfoSymbol').innerText = `Symbol: ${symbol}`;
@@ -512,6 +521,7 @@
                 document.getElementById('nftInfoOwner').innerText = `Owner: ${owner}`;
                 document.getElementById('nftInfoPaymentToken').innerText = `Payment Token: ${paymentToken}`;
                 document.getElementById('nftInfoPaymentAmount').innerText = `Payment Amount: ${web3.utils.fromWei(paymentAmount, 'ether')} tokens`;
+                document.getElementById('nftInfoTotalSupply').innerText = `Total Minted: ${totalSupply}`;
                 document.getElementById('nftInfo').style.display = 'block';
                 await updateOwnedNFTs(contractAddress);
             } catch (error) {
