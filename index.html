@@ -212,10 +212,6 @@
                 <input type="text" id="nftId" placeholder="e.g., xxx">
             </div>
             <button class="action-button" id="mintButton" onclick="mintNFT()">Mint NFT</button>
-            <div class="nft-info">
-                <label>Your NFTs (Latest 10)</label>
-                <ul id="ownedNFTsList"></ul>
-            </div>
             <div class="nft-preview" id="nftPreview" style="display: none;">
                 <p>NFT Preview</p>
                 <img id="nftImage" src="" alt="NFT Preview">
@@ -323,20 +319,6 @@
                 "type": "function"
             },
             {
-                "inputs": [
-                    {"internalType": "address", "name": "user", "type": "address"},
-                    {"internalType": "uint256", "name": "startIndex", "type": "uint256"},
-                    {"internalType": "uint256", "name": "limit", "type": "uint256"}
-                ],
-                "name": "getTokensByOwner",
-                "outputs": [
-                    {"internalType": "uint256[]", "name": "", "type": "uint256[]"},
-                    {"internalType": "string[]", "name": "", "type": "string[]"}
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
                 "inputs": [],
                 "name": "suffix",
                 "outputs": [{"internalType": "string", "name": "", "type": "string"}],
@@ -396,7 +378,9 @@
         const erc20Abi = [
             {"constant": true, "inputs": [{"name": "_owner", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "balance", "type": "uint256"}], "type": "function"},
             {"constant": false, "inputs": [{"name": "_spender", "type": "address"}, {"name": "_value", "type": "uint256"}], "name": "approve", "outputs": [{"name": "success", "type": "bool"}], "type": "function"},
-            {"constant": true, "inputs": [{"name": "_owner", "type": "address"}, {"name": "_spender", "type": "address"}], "name": "allowance", "outputs": [{"name": "remaining", "type": "uint256"}], "type": "function"}
+            {"constant": true, "inputs": [{"name": "_owner", "type": "address"}, {"
+
+name": "_spender", "type": "address"}], "name": "allowance", "outputs": [{"name": "remaining", "type": "uint256"}], "type": "function"}
         ];
 
         const chains = {
@@ -513,7 +497,6 @@
                 document.getElementById('nftInfoPaymentToken').innerText = `Payment Token: ${paymentToken}`;
                 document.getElementById('nftInfoPaymentAmount').innerText = `Payment Amount: ${web3.utils.fromWei(paymentAmount, 'ether')} tokens`;
                 document.getElementById('nftInfo').style.display = 'block';
-                await updateOwnedNFTs(contractAddress);
             } catch (error) {
                 document.getElementById('nftInfo').style.display = 'none';
                 document.getElementById('dogMessage').innerText = getRandomMessage('invalidContract');
@@ -565,44 +548,6 @@
                     return;
                 }
                 await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        }
-
-        async function updateOwnedNFTs(contractAddress) {
-            if (!web3 || !account || !web3.utils.isAddress(contractAddress)) return;
-            try {
-                nftContract = new web3.eth.Contract(nftAbi, contractAddress);
-                const list = document.getElementById('ownedNFTsList');
-                list.innerHTML = '';
-                const result = await nftContract.methods.getTokensByOwner(account, 0, 10).call();
-                const tokenIds = result[0];
-                const tokenNames = result[1];
-                const nfts = tokenIds.map((tokenId, index) => ({
-                    tokenId: tokenId,
-                    tokenName: tokenNames[index]
-                })).filter(nft => nft.tokenName !== '');
-                if (nfts.length === 0) {
-                    list.innerHTML = '<li>No NFTs owned yet.</li>';
-                    return;
-                }
-                for (const nft of nfts) {
-                    const tokenURI = await nftContract.methods.getTokenURI(nft.tokenId).call();
-                    const li = document.createElement('li');
-                    li.innerText = `NFT: ${nft.tokenName} (ID: ${nft.tokenId})`;
-                    const viewButton = document.createElement('button');
-                    viewButton.className = 'copy-button';
-                    viewButton.innerText = 'View';
-                    viewButton.onclick = () => {
-                        const json = JSON.parse(atob(tokenURI.split(',')[1]));
-                        document.getElementById('nftImage').src = json.image;
-                        document.getElementById('nftPreview').style.display = 'block';
-                    };
-                    li.appendChild(viewButton);
-                    list.appendChild(li);
-                }
-            } catch (error) {
-                document.getElementById('ownedNFTsList').innerHTML = '<li>Error loading NFTs.</li>';
-                console.error("Owned NFTs error:", error);
             }
         }
 
