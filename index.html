@@ -227,7 +227,7 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
     <script>
-        const factoryAddress = '0x9Cf0fA3BFc4007512eCf0F92ddB6C2429fCc98C4';
+        const factoryAddress = '0x91795A1c17D96591aA8F96CB66973E27a272459d';
         const factoryAbi = [
             {
                 "inputs": [
@@ -249,6 +249,21 @@
                 ],
                 "name": "NFTContractCreated",
                 "type": "event"
+            },
+            {
+                "inputs": [
+                    {"internalType": "address", "name": "owner", "type": "address"},
+                    {"internalType": "uint256", "name": "startIndex", "type": "uint256"},
+                    {"internalType": "uint256", "name": "limit", "type": "uint256"}
+                ],
+                "name": "getContractsByOwner",
+                "outputs": [
+                    {"internalType": "address[]", "name": "", "type": "address[]"},
+                    {"internalType": "string[]", "name": "", "type": "string[]"},
+                    {"internalType": "uint256[]", "name": "", "type": "uint256[]"}
+                ],
+                "stateMutability": "view",
+                "type": "function"
             },
             {
                 "inputs": [{"internalType": "string", "name": "", "type": "string"}],
@@ -296,6 +311,27 @@
                 "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
                 "name": "tokenURI",
                 "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+                "name": "getTokenURI",
+                "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {"internalType": "address", "name": "user", "type": "address"},
+                    {"internalType": "uint256", "name": "startIndex", "type": "uint256"},
+                    {"internalType": "uint256", "name": "limit", "type": "uint256"}
+                ],
+                "name": "getTokensByOwner",
+                "outputs": [
+                    {"internalType": "uint256[]", "name": "", "type": "uint256[]"},
+                    {"internalType": "string[]", "name": "", "type": "string[]"}
+                ],
                 "stateMutability": "view",
                 "type": "function"
             },
@@ -387,26 +423,26 @@
         }
 
         async function initializeWeb3() {
-            if (window.ethereum) {
-                web3 = new Web3(window.ethereum);
-                try {
-                    await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    const accounts = await web3.eth.getAccounts();
-                    account = accounts[0];
-                    document.getElementById('connectWalletButton').innerText = `Connected: ${account.slice(0, 6)}...${account.slice(-4)}`;
-                    await switchNetwork(fromChain);
-                    await initializeContracts();
-                    await updateCreatedContracts();
-                    document.getElementById('networkStatus').innerText = `Connected to ${fromChain}`;
-                    document.getElementById('dogMessage').innerText = getRandomMessage('connectSuccess');
-                } catch (error) {
-                    document.getElementById('networkStatus').innerText = 'Failed to connect wallet';
-                    document.getElementById('dogMessage').innerText = getRandomMessage('connectFail');
-                    console.error("Wallet connection error:", error);
-                }
-            } else {
+            if (!window.ethereum) {
                 document.getElementById('networkStatus').innerText = 'Please install MetaMask';
                 document.getElementById('dogMessage').innerText = 'Woof! MetaMask not found, pup!';
+                return;
+            }
+            try {
+                web3 = new Web3(window.ethereum);
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                const accounts = await web3.eth.getAccounts();
+                account = accounts[0];
+                document.getElementById('connectWalletButton').innerText = `Connected: ${account.slice(0, 6)}...${account.slice(-4)}`;
+                await switchNetwork(fromChain);
+                await initializeContracts();
+                await updateCreatedContracts();
+                document.getElementById('networkStatus').innerText = `Connected to ${fromChain}`;
+                document.getElementById('dogMessage').innerText = getRandomMessage('connectSuccess');
+            } catch (error) {
+                document.getElementById('networkStatus').innerText = 'Failed to connect wallet';
+                document.getElementById('dogMessage').innerText = getRandomMessage('connectFail');
+                console.error("Wallet connection error:", error);
             }
         }
 
@@ -478,18 +514,12 @@
             try {
                 const list = document.getElementById('createdContractsList');
                 list.innerHTML = '';
-                const events = await factoryContract.getPastEvents('NFTContractCreated', {
-                    filter: { owner: account },
-                    fromBlock: 0,
-                    toBlock: 'latest'
-                });
-                const contracts = events
-                    .map(event => ({
-                        suffix: event.returnValues.suffix,
-                        contractAddress: event.returnValues.nftContract
-                    }))
-                    .slice(-10)
-                    .reverse();
+                const result = await factoryContract.methods.getContractsByOwner(account, 0, 10).call();
+                const contracts = result[0].map((address, index) => ({
+                    contractAddress: address,
+                    suffix: result[1][index],
+                    createdAt: result[2][index]
+                }));
                 if (contracts.length === 0) {
                     list.innerHTML = '<li>No contracts created yet.</li>';
                     return;
@@ -518,41 +548,34 @@
             if (!web3 || !account || !web3.utils.isAddress(contractAddress)) return;
             try {
                 nftContract = new web3.eth.Contract(nftAbi, contractAddress);
-                const mintBlock = await nftContract.methods.mintBlock().call();
                 const list = document.getElementById('ownedNFTsList');
                 list.innerHTML = '';
-                const nfts = [];
-                for (let tokenId = 1; tokenId < mintBlock; tokenId++) {
-                    try {
-                        const owner = await nftContract.methods.ownerOf(tokenId).call();
-                        if (owner.toLowerCase() === account.toLowerCase()) {
-                            const tokenName = await nftContract.methods.tokenName(tokenId).call();
-                            const tokenURI = await nftContract.methods.tokenURI(tokenId).call();
-                            nfts.push({ tokenId, tokenName, tokenURI });
-                        }
-                    } catch (error) {
-                        continue; // Skip invalid tokenIds
-                    }
-                }
+                const result = await nftContract.methods.getTokensByOwner(account, 0, 10).call();
+                const tokenIds = result[0];
+                const tokenNames = result[1];
+                const nfts = tokenIds.map((tokenId, index) => ({
+                    tokenId: tokenId,
+                    tokenName: tokenNames[index]
+                })).filter(nft => nft.tokenName !== '');
                 if (nfts.length === 0) {
                     list.innerHTML = '<li>No NFTs owned yet.</li>';
                     return;
                 }
-                nfts.slice(-10).reverse().forEach(nft => {
+                for (const nft of nfts) {
+                    const tokenURI = await nftContract.methods.getTokenURI(nft.tokenId).call();
                     const li = document.createElement('li');
                     li.innerText = `NFT: ${nft.tokenName} (ID: ${nft.tokenId})`;
                     const viewButton = document.createElement('button');
                     viewButton.className = 'copy-button';
                     viewButton.innerText = 'View';
                     viewButton.onclick = () => {
-                        // Parse Base64 JSON to get image URI
-                        const json = JSON.parse(atob(nft.tokenURI.split(',')[1]));
+                        const json = JSON.parse(atob(tokenURI.split(',')[1]));
                         document.getElementById('nftImage').src = json.image;
                         document.getElementById('nftPreview').style.display = 'block';
                     };
                     li.appendChild(viewButton);
                     list.appendChild(li);
-                });
+                }
             } catch (error) {
                 document.getElementById('ownedNFTsList').innerHTML = '<li>Error loading NFTs.</li>';
                 console.error("Owned NFTs error:", error);
@@ -621,7 +644,6 @@
                 return;
             }
 
-            // Validate suffix: alphanumeric only
             if (!/^[a-zA-Z0-9]+$/.test(suffix)) {
                 status.innerText = "Suffix must be alphanumeric.";
                 dogMessage.innerText = "Woof! Suffix can only contain letters and numbers, pup!";
@@ -687,7 +709,6 @@
                 return;
             }
 
-            // Validate NFT ID: alphanumeric only
             if (!/^[a-zA-Z0-9]+$/.test(nftId)) {
                 status.innerText = "NFT ID must be alphanumeric.";
                 dogMessage.innerText = "Woof! ID can only contain letters and numbers, pup!";
