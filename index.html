@@ -391,6 +391,13 @@
                 "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
                 "stateMutability": "view",
                 "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "bytes4", "name": "interfaceId", "type": "bytes4"}],
+                "name": "supportsInterface",
+                "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+                "stateMutability": "view",
+                "type": "function"
             }
         ];
         const erc20Abi = [
@@ -409,6 +416,7 @@
 
         let web3, account, factoryContract, nftContract, paymentTokenContract;
         const fromChain = 'Shibarium';
+        let currentSuffix = '';
 
         const dogMessages = {
             connectSuccess: ["Woof! Wallet connected, ready to create NFTs, pup!", "Arf! You're in, let's make some NFTs!", "Bark! Wallet's ready, time to create!"],
@@ -423,7 +431,8 @@
             mintExists: ["Woof! This NFT ID is already minted, pup!", "Arf! That ID is taken, try another!", "Bark! NFT ID already exists, pick a new one!"],
             noInput: ["Woof! Enter all required fields, pup!", "Arf! Can't proceed with empty fields!", "Bark! Need all details to continue!"],
             userDenied: ["Woof! You canceled the transaction, pup!", "Arf! Transaction denied, try again when ready!", "Bark! You said no, let's try again!"],
-            invalidContract: ["Woof! Invalid NFT contract address, check it, pup!", "Arf! That contract doesn't exist, try another!", "Bark! Bad contract address, fix it!"]
+            invalidContract: ["Woof! This address is not a valid IDNFT contract!", "Arf! That contract doesn't exist, try another!", "Bark! Bad contract address, fix it!"],
+            noContractLoaded: ["Woof! Please load a valid NFT contract first!", "Arf! No contract loaded, try again!", "Bark! Need a valid contract to mint!"]
         };
 
         function getRandomMessage(type) {
@@ -485,6 +494,7 @@
             factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
             nftContract = null;
             paymentTokenContract = null;
+            currentSuffix = '';
             document.getElementById('nftInfo').style.display = 'none';
             document.getElementById('nftPreview').style.display = 'none';
         }
@@ -494,18 +504,27 @@
                 document.getElementById('nftInfo').style.display = 'none';
                 document.getElementById('nftPreview').style.display = 'none';
                 document.getElementById('dogMessage').innerText = getRandomMessage('invalidContract');
+                currentSuffix = '';
                 return;
             }
             try {
                 nftContract = new web3.eth.Contract(nftAbi, contractAddress);
+                const supportsERC721 = await nftContract.methods.supportsInterface('0x80ac58cd').call();
+                if (!supportsERC721) {
+                    throw new Error('Not an ERC721 contract');
+                }
+
                 const [name, symbol, suffix, owner, paymentToken, paymentAmount] = await Promise.all([
-                    nftContract.methods.name().call(),
-                    nftContract.methods.symbol().call(),
-                    nftContract.methods.suffix().call(),
-                    nftContract.methods.owner().call(),
-                    nftContract.methods.paymentToken().call(),
-                    nftContract.methods.paymentAmount().call()
+                    nftContract.methods.name().call().catch(() => 'Unknown'),
+                    nftContract.methods.symbol().call().catch(() => 'Unknown'),
+                    nftContract.methods.suffix().call().catch(() => 'Unknown'),
+                    nftContract.methods.owner().call().catch(() => 'Unknown'),
+                    nftContract.methods.paymentToken().call().catch(() => 'Unknown'),
+                    nftContract.methods.paymentAmount().call().catch(() => '0')
                 ]);
+
+                console.log("Contract Info:", { name, symbol, suffix, owner, paymentToken, paymentAmount });
+
                 document.getElementById('nftInfoName').innerText = `Name: ${name}`;
                 document.getElementById('nftInfoSymbol').innerText = `Symbol: ${symbol}`;
                 document.getElementById('nftInfoSuffix').innerText = `Suffix: ${suffix}`;
@@ -513,11 +532,13 @@
                 document.getElementById('nftInfoPaymentToken').innerText = `Payment Token: ${paymentToken}`;
                 document.getElementById('nftInfoPaymentAmount').innerText = `Payment Amount: ${web3.utils.fromWei(paymentAmount, 'ether')} tokens`;
                 document.getElementById('nftInfo').style.display = 'block';
+                currentSuffix = suffix !== 'Unknown' ? suffix : '';
                 await updateOwnedNFTs(contractAddress);
             } catch (error) {
                 document.getElementById('nftInfo').style.display = 'none';
                 document.getElementById('dogMessage').innerText = getRandomMessage('invalidContract');
                 console.error("NFT info error:", error);
+                currentSuffix = '';
             }
         }
 
@@ -724,6 +745,12 @@
             if (!contractAddress || !web3.utils.isAddress(contractAddress)) {
                 status.innerText = "Invalid NFT contract address.";
                 dogMessage.innerText = getRandomMessage('invalidContract');
+                return;
+            }
+
+            if (!currentSuffix) {
+                status.innerText = "Please load a valid NFT contract first.";
+                dogMessage.innerText = getRandomMessage('noContractLoaded');
                 return;
             }
 
